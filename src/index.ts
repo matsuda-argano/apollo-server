@@ -1,16 +1,12 @@
-import { ApolloServer, gql } from 'apollo-server';
+import { ApolloServer } from 'apollo-server';
+import { GraphQLFileLoader } from '@graphql-tools/graphql-file-loader';
+import { loadSchemaSync } from '@graphql-tools/load';
+import { addResolversToSchema } from '@graphql-tools/schema';
+import { join } from 'path';
 
-// schemaは形定義の集合体
-const typeDefs = gql`
-  type Book {
-    title: String
-    author: String
-  }
-
-  type Query {
-    books: [Book]
-  }
-`;
+const schema = loadSchemaSync(join(__dirname, '../schema.graphql'), {
+  loaders: [new GraphQLFileLoader()]
+});
 
 const books = [
   {
@@ -29,12 +25,8 @@ const resolvers = {
   }
 };
 
-const server = new ApolloServer({
-  typeDefs,
-  resolvers,
-  csrfPrevention: true
-});
-
+const schemaWithResolvers = addResolversToSchema({ schema, resolvers });
+const server = new ApolloServer({ schema: schemaWithResolvers });
 server.listen().then(({ url }) => {
   console.log(`🚀  Server ready at ${url}`);
 });
